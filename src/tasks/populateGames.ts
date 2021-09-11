@@ -5,7 +5,6 @@ import { GameResponse, getGameStream } from '../api/getGameStream';
 import { initConnection } from '../db/connection';
 import { IGame, Game } from '../db/Entities/game';
 import { IGameScan, GameScan } from '../db/Entities/gameScans';
-import { getSingleGameDetails } from '../api/getSingleGame';
 
 type CallBack = (arg: GameResponse) => Promise<IGame>;
 
@@ -69,6 +68,7 @@ const createReadStream =
 
 const gameHandler = (game: GameResponse): Promise<IGame> => {
   const { id, ...rest } = game;
+  console.log(`saving: ${id}`) //eslint-disable-line
   const gameModel = new Game({
     lichessId: id,
     ...rest
@@ -95,10 +95,10 @@ const savePlayerAnalyses = (game: IGame) => {
 const pullGames = () => {
   let gamesSaved: string[];
   return Game.findOne()
-    .sort('lastMoveAt')
+    .sort('-createdAt')
     .then((game) => {
-      const until = (game?.createdAt || Date.now()) - 1;
-      return getGameStream({ until, max: 100 });
+      const since = game?.createdAt || 1356998400070;
+      return getGameStream({ since, max: 1000 });
     })
     .then(createReadStream(gameHandler))
     .then((gameScanData) => {
@@ -106,23 +106,6 @@ const pullGames = () => {
       const gameScan = new GameScan(gameScanData);
       return gameScan.save();
     })
-    .then(() =>
-      Promise.all(
-        gamesWithAnalysisIds.map((gameId) =>
-          getSingleGameDetails(gameId).catch(() => {
-            console.log('failed to save individual analysis', gameId);
-            return null;
-          })
-        )
-      )
-    )
-    .then((gamesWithAnalysis) =>
-      Promise.all(
-        gamesWithAnalysis.map((game) =>
-          game ? savePlayerAnalyses(game) : null
-        )
-      )
-    )
     .then(() => gamesSaved)
     .catch((err) => {
       console.log(err);
@@ -138,7 +121,7 @@ const pollGames = async () => {
   while (gamesInserted?.length) {
     allGamesSaved += gamesInserted?.length;
     console.log(`saved ${gamesInserted.length} games ${allGamesSaved} total. Pulling again in 3 minutes.`) //eslint-disable-line
-    await sleep(1000 * 60 * 3);
+    await sleep(1000 * 60 * 2);
     gamesInserted = await pullGames();
   }
   console.log(`Saved ${allGamesSaved} games, none more found. Exiting!`) //eslint-disable-line

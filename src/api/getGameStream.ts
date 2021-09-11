@@ -55,6 +55,7 @@ export interface GameResponse {
 
 export interface IGameStreamParams {
   until?: number;
+  since?: number;
   max?: number;
 }
 
@@ -62,10 +63,12 @@ export const getGameStream = async (
   gameStreamParams: IGameStreamParams = {}
 ): Promise<Readable> => {
   const until = gameStreamParams.until || Date.now();
+  const since = gameStreamParams.since || 1356998400070;
   const max = gameStreamParams.max || null;
   const account = await getAccountDetails();
   const getGameParams: IGetGameParams = {
     until,
+    since,
     username: account.username,
     shouldStreamResults: true
   };

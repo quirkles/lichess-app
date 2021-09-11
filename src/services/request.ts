@@ -7,19 +7,23 @@ loadEnv();
 
 export interface IGetGameParams {
   until?: number;
+  since?: number;
   max?: number;
   username: string;
   shouldStreamResults: boolean;
 }
 
 export const getGames = (getGameParams: IGetGameParams): Promise<unknown> => {
-  const { until, max, username, shouldStreamResults } = getGameParams;
+  const { until, max, since, username, shouldStreamResults } = getGameParams;
   let queryString = '?evals=true';
   if (until) {
     queryString += `&until=${until}`;
   }
   if (max) {
     queryString += `&max=${max}`;
+  }
+  if (since) {
+    queryString += `&since=${since}`;
   }
   const axiosConfig: AxiosRequestConfig = {
     baseURL: BASE_URL,
