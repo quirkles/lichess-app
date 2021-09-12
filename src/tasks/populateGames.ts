@@ -88,17 +88,13 @@ const gameHandler = (game: GameResponse): Promise<IGame> => {
     });
 };
 
-const savePlayerAnalyses = (game: IGame) => {
-  Game.findOneAndUpdate({ lichessId: game.id }, { players: game.players });
-};
-
 const pullGames = () => {
   let gamesSaved: string[];
   return Game.findOne()
     .sort('-createdAt')
     .then((game) => {
       const since = game?.createdAt || 1356998400070;
-      return getGameStream({ since, max: 1000 });
+      return getGameStream({ since });
     })
     .then(createReadStream(gameHandler))
     .then((gameScanData) => {
@@ -116,15 +112,8 @@ const pullGames = () => {
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 const pollGames = async () => {
-  let allGamesSaved = 0;
-  let gamesInserted = await pullGames();
-  while (gamesInserted?.length) {
-    allGamesSaved += gamesInserted?.length;
-    console.log(`saved ${gamesInserted.length} games ${allGamesSaved} total. Pulling again in 3 minutes.`) //eslint-disable-line
-    await sleep(1000 * 60 * 2);
-    gamesInserted = await pullGames();
-  }
-  console.log(`Saved ${allGamesSaved} games, none more found. Exiting!`) //eslint-disable-line
+  const gamesInserted = await pullGames();
+  console.log(`saved ${gamesInserted?.length || 0} games`) //eslint-disable-line
   process.exit();
 };
 

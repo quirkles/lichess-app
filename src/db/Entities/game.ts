@@ -10,6 +10,7 @@ export interface IGame {
   createdAt: number;
   lastMoveAt: number;
   status: string;
+  pgn: string,
   players: {
     white: {
       user: {
@@ -70,6 +71,7 @@ const gameSchema = new mongoose.Schema<IGame>({
   variant: String,
   speed: String,
   perf: String,
+  pgn: String,
   createdAt: Number,
   lastMoveAt: Number,
   status: String,

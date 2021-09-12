@@ -15,7 +15,7 @@ export interface IGetGameParams {
 
 export const getGames = (getGameParams: IGetGameParams): Promise<unknown> => {
   const { until, max, since, username, shouldStreamResults } = getGameParams;
-  let queryString = '?evals=true';
+  let queryString = '?evals=true&pgnInJson=true';
   if (until) {
     queryString += `&until=${until}`;
   }
