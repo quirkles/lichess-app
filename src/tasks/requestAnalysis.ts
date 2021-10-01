@@ -141,8 +141,9 @@ const requestAnalysis = async (
   // try to click on request analysis button
   try {
     console.log('Requesting analysis') //eslint-disable-line
+    await delay(500); // dont like this but the ui makes it hard to verify when the analysis is actually done to wait 30 seconds
     await page.waitForSelector('form.future-game-analysis button', {
-      timeout: 400
+      timeout: 500
     });
     await page.click('form.future-game-analysis button');
     console.log('waiting for analysis') //eslint-disable-line
@@ -154,7 +155,8 @@ const requestAnalysis = async (
   // verify analysis is there
   try {
     await page.waitForSelector(
-      '.analyse__acpl .advice-summary > a.button.text'
+      '.analyse__acpl .advice-summary > a.button.text',
+      { timeout: 500 }
     );
     await page.waitForFunction(
       'document.querySelector(".analyse__acpl .advice-summary > a.button.text").innerText.toLowerCase() === "learn from your mistakes"'
