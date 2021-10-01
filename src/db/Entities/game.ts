@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose';
+import { LeanDocument } from 'mongoose';
 
-export interface IGame {
+export interface IGame extends LeanDocument<any> {
   id: string;
   lichessId: string;
   rated: boolean;
@@ -10,7 +11,7 @@ export interface IGame {
   createdAt: number;
   lastMoveAt: number;
   status: string;
-  pgn: string,
+  pgn: string;
   players: {
     white: {
       user: {

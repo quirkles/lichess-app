@@ -118,21 +118,51 @@ const login = async (
   return page;
 };
 
+const delay = (ms: number): Promise<void> =>
+  new Promise((res) => setTimeout(res, ms));
+
 const requestAnalysis = async (
   page: Page,
   lichessId: string
 ): Promise<void> => {
   await page.goto(`https://lichess.org/${lichessId}`);
+
+  ///try to go to analysis page
   try {
     await page.click('a.fbt.analysis');
   } catch (err) {
     console.log('no analysis button found, may be analysis page already') //eslint-disable-line
   }
 
+  ///go to analysis tab
   await page.waitForSelector('span.computer-analysis');
   await page.click('span.computer-analysis');
-  await page.click('form.future-game-analysis button');
-  await page.waitForSelector('.analyse__acpl');
+
+  // try to click on request analysis button
+  try {
+    console.log('Requesting analysis') //eslint-disable-line
+    await page.waitForSelector('form.future-game-analysis button', {
+      timeout: 400
+    });
+    await page.click('form.future-game-analysis button');
+    console.log('waiting for analysis') //eslint-disable-line
+    await delay(30 * 1000); // dont like this but the ui makes it hard to verify when the analysis is actually done to wait 30 seconds
+  } catch (e) {
+    console.log('no request analysis button found, may be available already') //eslint-disable-line
+  }
+
+  // verify analysis is there
+  try {
+    await page.waitForSelector(
+      '.analyse__acpl .advice-summary > a.button.text'
+    );
+    await page.waitForFunction(
+      'document.querySelector(".analyse__acpl .advice-summary > a.button.text").innerText.toLowerCase() === "learn from your mistakes"'
+    );
+    console.log('done') //eslint-disable-line
+  } catch (e) {
+    console.log("failed to request analysis") //eslint-disable-line
+  }
 };
 
 const main = async (): Promise<string[]> => {
@@ -149,8 +179,13 @@ const main = async (): Promise<string[]> => {
   for (const lichessId of lichessIds) {
     try {
       await requestAnalysis(page, lichessId);
-      const analysis = await getSingleGameDetails(lichessId);
-      Game.findOneAndUpdate({ lichessId }, { players: analysis.players });
+      const gameDetails = await getSingleGameDetails(lichessId);
+      const doc = await Game.findOneAndUpdate(
+        { lichessId },
+        { players: gameDetails.players, analysis: gameDetails.analysis },
+        { new: true }
+      );
+      console.log('new game', doc?.toJSON()) //eslint-disable-line
       gamesAnalysed.push(lichessId);
     } catch (err) {
         console.log('failed to request analysis for game', lichessId) //eslint-disable-line
